@@ -5,12 +5,12 @@ import type {
   BrowserType,
   PageScreenshotOptions,
 } from 'playwright-core';
+import { copyFileSync } from 'fs-extra';
 import { log } from '../log';
 import { getBrowser, hashFile, sleep } from '../utils';
 import { config } from '../config';
 import type { ShotItem } from '../types';
 import { resizeViewportToFullscreen, waitForNetworkRequests } from './utils';
-import { copyFileSync } from 'fs-extra';
 
 const takeScreenShot = async ({
   browser,
@@ -227,7 +227,7 @@ export const takeScreenShots = async (
       shouldTakeShot = config.filterShotCheck(shotItem);
     }
 
-    if (shouldTakeShot === false) {
+    if (!shouldTakeShot) {
       log.process(
         'info',
         'general',
