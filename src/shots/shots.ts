@@ -10,6 +10,7 @@ import { getBrowser, hashFile, sleep } from '../utils';
 import { config } from '../config';
 import type { ShotItem } from '../types';
 import { resizeViewportToFullscreen, waitForNetworkRequests } from './utils';
+import { copyFileSync } from 'fs-extra';
 
 const takeScreenShot = async ({
   browser,
@@ -219,10 +220,37 @@ export const takeScreenShots = async (
   _browser?: BrowserType,
 ) => {
   const browser = await (_browser ?? getBrowser()).launch();
-  const total = shotItems.length;
+  const filteredItems = shotItems.filter((shotItem) => {
+    let shouldTakeShot = true;
+
+    if (config.filterShotCheck) {
+      shouldTakeShot = config.filterShotCheck(shotItem);
+    }
+
+    if (shouldTakeShot === false) {
+      log.process(
+        'info',
+        'general',
+        `Screenshot of '${shotItem.shotName}' skipped`,
+      );
+
+      copyFileSync(shotItem.filePathBaseline, shotItem.filePathCurrent);
+
+      return false;
+    }
+
+    log.process(
+      'info',
+      'general',
+      `Screenshot of '${shotItem.shotName}' will be processed`,
+    );
+
+    return true;
+  });
+  const total = filteredItems.length;
 
   await mapLimit<[number, ShotItem], void>(
-    shotItems.entries(),
+    filteredItems.entries(),
     config.shotConcurrency,
     async (item: [number, ShotItem]) => {
       const [index, shotItem] = item;
