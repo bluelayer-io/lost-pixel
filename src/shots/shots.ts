@@ -5,6 +5,7 @@ import type {
   BrowserType,
   PageScreenshotOptions,
 } from 'playwright-core';
+import { copyFileSync } from 'fs-extra';
 import { log } from '../log';
 import { getBrowser, hashFile, sleep } from '../utils';
 import { config } from '../config';
@@ -219,10 +220,41 @@ export const takeScreenShots = async (
   _browser?: BrowserType,
 ) => {
   const browser = await (_browser ?? getBrowser()).launch();
-  const total = shotItems.length;
+  let skippedCounter = 0;
+
+  const filteredItems = shotItems.filter((shotItem) => {
+    let shouldTakeShot = true;
+
+    if (config.filterScreenshot) {
+      shouldTakeShot = config.filterScreenshot(shotItem);
+    }
+
+    if (!shouldTakeShot) {
+      log.process(
+        'debug',
+        'general',
+        `Screenshot '${shotItem.shotName}' skipped, copying baseline`,
+      );
+
+      skippedCounter++;
+      copyFileSync(shotItem.filePathBaseline, shotItem.filePathCurrent);
+
+      return false;
+    }
+
+    return true;
+  });
+
+  log.process(
+    'info',
+    'general',
+    `${skippedCounter} screenshots are skipped and the baseline is taken as current`,
+  );
+
+  const total = filteredItems.length;
 
   await mapLimit<[number, ShotItem], void>(
-    shotItems.entries(),
+    filteredItems.entries(),
     config.shotConcurrency,
     async (item: [number, ShotItem]) => {
       const [index, shotItem] = item;

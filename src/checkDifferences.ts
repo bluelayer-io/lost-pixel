@@ -18,7 +18,26 @@ export const checkDifferences = async (shotItems: ShotItem[]) => {
     `Comparing ${shotItems.length} screenshots using '${config.compareEngine}' as compare engine`,
   );
 
-  const total = shotItems.length;
+  let skippedCounter = 0;
+  const filteredItems = shotItems.filter((shotItem) => {
+    let shouldProceed = true;
+
+    if (config.filterCompare) {
+      shouldProceed = config.filterCompare(shotItem);
+    }
+
+    if (!shouldProceed) {
+      skippedCounter++;
+
+      return false;
+    }
+
+    return true;
+  });
+  const total = filteredItems.length;
+
+  log.process('info', 'general', `${skippedCounter} comparisons are skipped`);
+
   const noBaselinesItems: ShotItem[] = [];
   const aboveThresholdDifferenceItems: ShotItem[] = [];
 
@@ -32,7 +51,7 @@ export const checkDifferences = async (shotItems: ShotItem[]) => {
   > = {};
 
   await mapLimit<[number, ShotItem], void>(
-    shotItems.entries(),
+    filteredItems.entries(),
     config.compareConcurrency,
     async (item: [number, ShotItem]) => {
       const [index, shotItem] = item;

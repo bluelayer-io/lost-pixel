@@ -203,6 +203,16 @@ const StoryLikeSchema = z.object({
   parameters: z.record(z.unknown()).optional(),
 });
 
+const ShotItemSchema = z.object({
+  shotMode: ShotModeSchema,
+  id: z.string(),
+  shotName: z.string(),
+  importPath: z.string().optional(),
+  filePathBaseline: z.string(),
+  filePathCurrent: z.string(),
+  filePathDifference: z.string(),
+});
+
 const TimeoutsSchema = z.object({
   /**
    * Timeout for fetching stories
@@ -332,6 +342,24 @@ const BaseConfigSchema = z.object({
   filterShot: z
     .function()
     .args(StoryLikeSchema)
+    .returns(z.boolean())
+    .optional(),
+
+  /**
+   * Filter screenshots, copy the baseline into current folder if false.
+   */
+  filterScreenshot: z
+    .function()
+    .args(ShotItemSchema)
+    .returns(z.boolean())
+    .optional(),
+
+  /**
+   * Filter screenshots during compare
+   */
+  filterCompare: z
+    .function()
+    .args(ShotItemSchema)
     .returns(z.boolean())
     .optional(),
 
