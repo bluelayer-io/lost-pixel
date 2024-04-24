@@ -220,33 +220,37 @@ export const takeScreenShots = async (
   _browser?: BrowserType,
 ) => {
   const browser = await (_browser ?? getBrowser()).launch();
+  let skippedCounter = 0;
+
   const filteredItems = shotItems.filter((shotItem) => {
     let shouldTakeShot = true;
 
-    if (config.filterShotCheck) {
-      shouldTakeShot = config.filterShotCheck(shotItem);
+    if (config.filterScreenshot) {
+      shouldTakeShot = config.filterScreenshot(shotItem);
     }
 
     if (!shouldTakeShot) {
       log.process(
-        'info',
+        'debug',
         'general',
-        `Screenshot of '${shotItem.shotName}' skipped`,
+        `Screenshot '${shotItem.shotName}' skipped, copying baseline`,
       );
 
+      skippedCounter++;
       copyFileSync(shotItem.filePathBaseline, shotItem.filePathCurrent);
 
       return false;
     }
 
-    log.process(
-      'info',
-      'general',
-      `Screenshot of '${shotItem.shotName}' will be processed`,
-    );
-
     return true;
   });
+
+  log.process(
+    'info',
+    'general',
+    `${skippedCounter} screenshots are skipped and the baseline is taken as current`,
+  );
+
   const total = filteredItems.length;
 
   await mapLimit<[number, ShotItem], void>(

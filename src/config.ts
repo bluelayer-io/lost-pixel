@@ -346,9 +346,18 @@ const BaseConfigSchema = z.object({
     .optional(),
 
   /**
-   * Filter shot screenshot and shot diff steps
+   * Filter screenshots, copy the baseline into current folder if false.
    */
-  filterShotCheck: z
+  filterScreenshot: z
+    .function()
+    .args(ShotItemSchema)
+    .returns(z.boolean())
+    .optional(),
+
+  /**
+   * Filter screenshots during compare
+   */
+  filterCompare: z
     .function()
     .args(ShotItemSchema)
     .returns(z.boolean())
